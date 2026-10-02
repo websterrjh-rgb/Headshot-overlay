@@ -26,6 +26,7 @@ h1{grid-column:1/-1;margin:0;font-weight:800;font-size:clamp(26px,4vw,38px);lett
 input[type=text]{width:100%;font:inherit;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 input[type=text]:focus-visible,.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .check{display:flex;align-items:center;gap:8px;margin-top:-8px}.check input{width:18px;height:18px;accent-color:#2a9fcb}.check span{font-weight:400}
+.urlrow{display:flex;gap:8px;margin-top:8px}.urlrow input{flex:1;min-width:0;font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}.urlrow button{padding:8px 14px}
 button{font:600 16px Archivo,system-ui,sans-serif;padding:12px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -44,9 +45,11 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
   <h1>Author headshot overlay</h1>
   <section class="panel" aria-label="Inputs">
     <div class="field"><span id="l1">Main image</span>
-      <label class="drop" id="d1"><img alt=""><span class="hint">Drop an image or click to choose</span><input type="file" accept="image/*" aria-labelledby="l1"></label></div>
+      <label class="drop" id="d1"><img alt=""><span class="hint">Drop an image or click to choose</span><input type="file" accept="image/*" aria-labelledby="l1"></label>
+      <div class="urlrow" id="u1"><input type="url" placeholder="Or paste an image URL" aria-label="Image URL"><button type="button">Load</button></div></div>
     <div class="field"><span id="l2">Headshot</span>
-      <label class="drop round" id="d2"><img alt=""><span class="hint">Choose headshot</span><input type="file" accept="image/*" aria-labelledby="l2"></label></div>
+      <label class="drop round" id="d2"><img alt=""><span class="hint">Choose headshot</span><input type="file" accept="image/*" aria-labelledby="l2"></label>
+      <div class="urlrow" id="u2"><input type="url" placeholder="Or paste an image URL" aria-label="Image URL"><button type="button">Load</button></div></div>
     <label class="field"><span>Author name</span><input type="text" id="name" placeholder="Dave Smith" autocomplete="off"></label>
     <label class="check"><input type="checkbox" id="by"> <span>Include "By" before the name</span></label>
     <label class="field"><span>Job title (optional)</span><input type="text" id="title" placeholder="Senior editor" autocomplete="off"></label>
@@ -64,7 +67,7 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
   var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
   var nameEl=document.getElementById("name"), msg=document.getElementById("msg");
 
-  function wire(id,key){
+  function wire(id,key,urlId){
     var box=document.getElementById(id), input=box.querySelector("input"), prev=box.querySelector("img");
     function load(file){
       if(!file||file.type.indexOf("image/")!==0){msg.textContent="That file isn't an image. Choose a JPG, PNG or WebP.";return;}
@@ -73,12 +76,23 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
       im.onerror=function(){msg.textContent="That image couldn't be read. Try another file.";};
       im.src=url;
     }
+    var row=document.getElementById(urlId), urlIn=row.querySelector("input"), urlBtn=row.querySelector("button");
+    function loadUrl(){
+      var u=urlIn.value.trim(); if(!u)return;
+      var im=new Image(); im.crossOrigin="anonymous";
+      msg.textContent="Loading image\u2026";
+      im.onload=function(){imgs[key]=im;prev.src=u;box.classList.add("has");msg.textContent="";draw();};
+      im.onerror=function(){msg.textContent="That URL couldn't be loaded. Check that it links directly to an image and that the host allows use on other sites.";};
+      im.src=u;
+    }
+    urlBtn.addEventListener("click",loadUrl);
+    urlIn.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();loadUrl();}});
     input.addEventListener("change",function(){load(input.files[0]);});
     ["dragenter","dragover"].forEach(function(e){box.addEventListener(e,function(ev){ev.preventDefault();box.classList.add("over");});});
     ["dragleave","drop"].forEach(function(e){box.addEventListener(e,function(ev){ev.preventDefault();box.classList.remove("over");});});
     box.addEventListener("drop",function(ev){load(ev.dataTransfer.files[0]);});
   }
-  wire("d1","main"); wire("d2","head");
+  wire("d1","main","u1"); wire("d2","head","u2");
   nameEl.addEventListener("input",draw);
   var titleEl=document.getElementById("title");titleEl.addEventListener("input",draw);
   var byEl=document.getElementById("by");byEl.addEventListener("change",draw);
