@@ -51,6 +51,7 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
       <label class="drop round" id="d2"><img alt=""><span class="hint">Choose headshot</span><input type="file" accept="image/*" aria-labelledby="l2"></label>
       <div class="urlrow" id="u2"><input type="url" placeholder="Or paste an image URL" aria-label="Image URL"><button type="button">Load</button></div></div>
     <label class="check"><input type="checkbox" id="border" checked> <span>Include border around headshot</span></label>
+    <label class="check"><input type="checkbox" id="thin"> <span>Thin border instead (no text)</span></label>
     <label class="field"><span>Author name</span><input type="text" id="name" placeholder="Dave Smith" autocomplete="off"></label>
     <label class="check"><input type="checkbox" id="by"> <span>Include "By" before the name</span></label>
     <label class="field"><span>Job title (optional)</span><input type="text" id="title" placeholder="Senior editor" autocomplete="off"></label>
@@ -63,7 +64,7 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
 </main>
 <script>
 (function(){
-  var COLOR="#8ed3f0", INK="#0b3a4f", DIAM=300, RING=44, MARGIN=48;
+  var COLOR="#8ed3f0", INK="#0b3a4f", DIAM=300, RING=44, MARGIN=48, THIN=8;
   var imgs={main:null,head:null};
   var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
   var nameEl=document.getElementById("name"), msg=document.getElementById("msg");
@@ -98,6 +99,7 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
   var titleEl=document.getElementById("title");titleEl.addEventListener("input",draw);
   var byEl=document.getElementById("by");byEl.addEventListener("change",draw);
   var borderEl=document.getElementById("border");borderEl.addEventListener("change",draw);
+  var thinEl=document.getElementById("thin");thinEl.addEventListener("change",draw);
 
   function ringText(cx,cy,rMid,text,bottom,startSize){
     var size=startSize, track=2, chars=Array.from(text.trim());
@@ -125,8 +127,9 @@ canvas{max-width:100%;height:auto;border-radius:6px;display:none}
     cv.width=W;cv.height=H;
     ctx.drawImage(imgs.main,0,0,W,H);
     if(imgs.head){
-      var useB=borderEl.checked, ring=useB?RING:0, outer=DIAM/2, R=outer-ring, cx=W-MARGIN-outer, cy=H-MARGIN-outer;
-      if(useB){ctx.beginPath();ctx.arc(cx,cy,outer,0,Math.PI*2);ctx.fillStyle=COLOR;ctx.fill();}
+      var useB=borderEl.checked, useT=!useB&&thinEl.checked, ring=useB?RING:(useT?THIN:0);thinEl.disabled=useB;
+      var outer=DIAM/2, R=outer-ring, cx=W-MARGIN-outer, cy=H-MARGIN-outer;
+      if(useB||useT){ctx.beginPath();ctx.arc(cx,cy,outer,0,Math.PI*2);ctx.fillStyle=COLOR;ctx.fill();}
       ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
       var h=imgs.head,s=Math.min(h.naturalWidth,h.naturalHeight),sx=(h.naturalWidth-s)/2,sy=(h.naturalHeight-s)/2;
       ctx.drawImage(h,sx,sy,s,s,cx-R,cy-R,R*2,R*2);ctx.restore();
